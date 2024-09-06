@@ -10,15 +10,19 @@ async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Err
     match (req.method(), req.uri().path()) {
         // Serve some instructions at /
         (&Method::GET, "/") => Ok(Response::new(Body::from(
-            "Try POSTing data to /echo such as: `curl localhost:8080/echo -XPOST -d 'hello world'`",
+            "Try POSTing data to /echo such as: `curl localhost:8080/echo -XPOST -d 'hello world'`\n",
         ))),
 
-        // Simply echo the body back to the client.
-        (&Method::POST, "/echo") => Ok(Response::new(req.into_body())),
+        // Simply echo the body back to the client with a newline at the end.
+        (&Method::POST, "/echo") => {
+            let body_bytes = hyper::body::to_bytes(req.into_body()).await?;
+            let body_string = String::from_utf8(body_bytes.to_vec()).unwrap();
+            Ok(Response::new(Body::from(format!("{}\n", body_string))))
+        }
 
+        // Reverse the body and send it back.
         (&Method::POST, "/echo/reversed") => {
             let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-
             let reversed_body = whole_body.iter().rev().cloned().collect::<Vec<u8>>();
             Ok(Response::new(Body::from(reversed_body)))
         }
@@ -26,8 +30,7 @@ async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Err
         (&Method::POST, "/parrot") => {
             let body_bytes = hyper::body::to_bytes(req.into_body()).await?;
             let body_string = String::from_utf8(body_bytes.to_vec()).unwrap();
-
-            Ok(Response::new(body_string.into()))
+            Ok(Response::new(Body::from(format!("{}\n", body_string))))
         },
 
         // Return the 404 Not Found for other routes.
