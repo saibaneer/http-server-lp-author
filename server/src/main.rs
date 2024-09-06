@@ -27,7 +27,7 @@ async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Err
             let body_bytes = hyper::body::to_bytes(req).await?;
             let body_string = String::from_utf8(body_bytes.to_vec()).unwrap();
 
-            Ok(Response::new(body_string))
+            Ok(Response::new(body_string.into()))
         },
 
         // Return the 404 Not Found for other routes.
